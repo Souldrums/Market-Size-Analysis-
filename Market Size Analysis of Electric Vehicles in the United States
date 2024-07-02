@@ -1,0 +1,50 @@
+# Now, let’s move forward towards finding the estimated market size of electric vehicles in the United States. I’ll first count the number of EVs registered every year
+# calculate the number of EVs registered each year
+ev_registration_counts = ev_data['Model Year'].value_counts().sort_index()
+ev_registration_counts
+from scipy.optimize import curve_fit
+import numpy as np
+
+# filter the dataset to include years with complete data, assuming 2023 is the last complete year
+filtered_years = ev_registration_counts[ev_registration_counts.index <= 2023]
+
+# define a function for exponential growth to fit the data
+def exp_growth(x, a, b):
+    return a * np.exp(b * x)
+
+# prepare the data for curve fitting
+x_data = filtered_years.index - filtered_years.index.min()
+y_data = filtered_years.values
+
+# fit the data to the exponential growth function
+params, covariance = curve_fit(exp_growth, x_data, y_data)
+
+# use the fitted function to forecast the number of EVs for 2024 and the next five years
+forecast_years = np.arange(2024, 2024 + 6) - filtered_years.index.min()
+forecasted_values = exp_growth(forecast_years, *params)
+
+# create a dictionary to display the forecasted values for easier interpretation
+forecasted_evs = dict(zip(forecast_years + filtered_years.index.min(), forecasted_values))
+
+print(forecasted_evs)
+#Now, let’s plot the estimated market size data:
+# prepare data for plotting
+years = np.arange(filtered_years.index.min(), 2029 + 1)
+actual_years = filtered_years.index
+forecast_years_full = np.arange(2024, 2029 + 1)
+
+# actual and forecasted values
+actual_values = filtered_years.values
+forecasted_values_full = [forecasted_evs[year] for year in forecast_years_full]
+
+plt.figure(figsize=(12, 8))
+plt.plot(actual_years, actual_values, 'bo-', label='Actual Registrations')
+plt.plot(forecast_years_full, forecasted_values_full, 'ro--', label='Forecasted Registrations')
+
+plt.title('Current & Estimated EV Market')
+plt.xlabel('Year')
+plt.ylabel('Number of EV Registrations')
+plt.legend()
+plt.grid(True)
+
+plt.show()
